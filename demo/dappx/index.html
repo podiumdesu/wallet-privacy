@@ -1,0 +1,962 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>dApp with a tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        --bg: #f3f4f6;
+        --card-bg: #ffffff;
+        --border-subtle: #e5e7eb;
+        --text-main: #111827;
+        --text-muted: #6b7280;
+        --accent-soft: #eef2ff;
+        --accent-strong: #4f46e5;
+        --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          sans-serif;
+        margin: 0;
+        padding: 1.5rem;
+        background:
+          radial-gradient(circle at top left, #e0f2fe, transparent 55%),
+          radial-gradient(circle at bottom right, #f5f3ff, transparent 55%),
+          var(--bg);
+        color: var(--text-main);
+
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
+      }
+
+      .page {
+        width: 100%;
+        max-width: 980px;
+        background: var(--card-bg);
+        border-radius: 18px;
+        padding: 1.5rem 1.75rem 1.75rem;
+        border: 1px solid var(--border-subtle);
+        box-shadow: var(--shadow-soft);
+        position: relative;
+      }
+      .page-wrapper {
+        width: 100%;
+        max-width: 980px;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+      }
+
+      .page-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1.25rem;
+        flex-wrap: wrap;
+      }
+
+      h1 {
+        font-size: 1.1rem;
+        margin: 0 0 0.35rem;
+      }
+
+      .subtitle {
+        margin: 0;
+        font-size: 0.86rem;
+        color: var(--text-muted);
+        max-width: 36rem;
+      }
+
+      .subtitle code {
+        background: #f3f4f6;
+        padding: 0.1rem 0.35rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+      }
+
+      .layout {
+        margin-top: 1.1rem;
+        display: grid;
+        grid-template-columns: minmax(0, 3fr) minmax(0, 2.5fr);
+        gap: 1rem;
+      }
+
+      @media (max-width: 800px) {
+        body {
+          padding: 0.9rem;
+        }
+        .page {
+          padding: 1.1rem 1.1rem 1.3rem;
+        }
+        .layout {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      h2 {
+        font-size: 0.95rem;
+        margin: 0 0 0.35rem;
+      }
+
+      .section-caption {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        margin: 0 0 0.5rem;
+      }
+
+      .card {
+        border-radius: 12px;
+        border: 1px solid var(--border-subtle);
+        background: #f9fafb;
+        padding: 0.85rem 0.9rem 0.9rem;
+      }
+
+      .card-inner {
+        background: var(--card-bg);
+        border-radius: 9px;
+        border: 1px dashed #e5e7eb;
+        padding: 0.7rem 0.75rem 0.8rem;
+      }
+
+      .small {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+      }
+
+      code {
+        background: #f3f4f6;
+        padding: 0.1rem 0.35rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+      }
+
+      button,
+      select {
+        padding: 0.4rem 0.8rem;
+        border-radius: 999px;
+        border: 1px solid #d1d5db;
+        background: #ffffff;
+        cursor: pointer;
+        font-size: 0.8rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      button:hover {
+        background: #f3f4f6;
+      }
+
+      button:active {
+        transform: translateY(0.5px);
+      }
+
+      select {
+        padding-right: 1.8rem;
+      }
+
+      .row {
+        margin: 0.45rem 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.35rem;
+      }
+
+      .label {
+        font-weight: 600;
+        font-size: 0.8rem;
+        margin-right: 0.25rem;
+      }
+
+      .status {
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 0.74rem;
+        color: #4b5563;
+        padding: 0.1rem 0.45rem;
+        border-radius: 999px;
+        background: #f3f4f6;
+      }
+
+      #currentAccounts {
+        display: inline-block;
+        margin-top: 0.15rem;
+      }
+
+      .pill-secondary {
+        border-radius: 999px;
+        background: #f3f4f6;
+        padding: 0.18rem 0.5rem;
+        font-size: 0.72rem;
+        color: var(--text-muted);
+      }
+
+      /* Action row styling */
+
+      .action-box {
+        width: 100%;
+        margin-top: 0.25rem;
+        padding: 0.45rem 0.55rem;
+        border-radius: 10px;
+        background: #f5f3ff;
+        border: 1px solid #e0e7ff;
+      }
+
+      .action-box-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #4f46e5;
+        margin-bottom: 0.25rem;
+      }
+
+      .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+
+      .btn-primary {
+        background: #4f46e5;
+        border-color: #4f46e5;
+        color: #ffffff;
+        font-weight: 600;
+        box-shadow: 0 8px 18px rgba(79, 70, 229, 0.35);
+      }
+
+      .btn-primary:hover {
+        background: #4338ca;
+      }
+
+      .btn-secondary {
+        background: #ffffff;
+        border-color: #d1d5db;
+        color: #374151;
+        font-weight: 500;
+      }
+
+      .btn-secondary:hover {
+        background: #f3f4f6;
+      }
+
+      .btn-info {
+        background: #eef2ff;
+        border-color: #c7d2fe;
+        color: #3730a3;
+        font-weight: 500;
+      }
+
+      .btn-info:hover {
+        background: #e0e7ff;
+      }
+
+      .step-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.05rem;
+        height: 1.05rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        background: #e0e7ff;
+        color: #312e81;
+      }
+
+      /* Optional revoke box */
+
+      .revoke-box {
+        width: 100%;
+        margin-top: 0.6rem;
+        padding: 0.5rem 0.6rem;
+        border-radius: 10px;
+        border: 1px solid #ddd6fe;
+        background: #faf5ff;
+      }
+
+      .revoke-title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #6d28d9;
+        margin-bottom: 0.3rem;
+      }
+
+      .revoke-text {
+        font-size: 0.78rem;
+        color: #6b7280;
+        margin-bottom: 0.35rem;
+      }
+
+      .revocation-badge {
+        display: inline-block;
+        margin-top: 0.35rem;
+        padding: 0.25rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        border: 1px solid transparent;
+      }
+
+      .revocation-badge.neutral {
+        background: #f3f4f6;
+        color: #4b5563;
+        border-color: #e5e7eb;
+      }
+
+      .revocation-badge.safe {
+        background: #dcfce7;
+        color: #166534;
+        border-color: #bbf7d0;
+      }
+
+      .revocation-badge.unsafe {
+        background: #fee2e2;
+        color: #7f1d1d;
+        border-color: #fecaca;
+      }
+
+      .revocation-badge.unsupported {
+        background: #fef3c7;
+        color: #92400e;
+        border-color: #fde68a;
+      }
+
+      /* Tracker log */
+
+      #localLog {
+        font-size: 0.79rem;
+      }
+
+      .entry {
+        padding: 0.35rem 0.4rem;
+        border-bottom: 1px solid #e5e7eb;
+        border-radius: 6px;
+      }
+
+      .entry:last-child {
+        border-bottom: none;
+      }
+
+      .wallet-name {
+        font-weight: 600;
+      }
+
+      .accounts {
+        margin-top: 0.12rem;
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 0.72rem;
+        word-break: break-all;
+        color: #374151;
+      }
+
+      .tag {
+        display: inline-block;
+        font-size: 0.7rem;
+        padding: 0.1rem 0.45rem;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent-strong);
+        margin-right: 0.35rem;
+      }
+
+      .log-caption {
+        font-size: 0.76rem;
+        color: var(--text-muted);
+        margin-top: 0.15rem;
+      }
+
+      /* 🔸 Highlight animation for changed tracker entries */
+      .entry.changed {
+        animation: trackerHighlight 1.3s ease-out;
+      }
+
+      @keyframes trackerHighlight {
+        0% {
+          background: #fef9c3; /* soft yellow */
+        }
+        100% {
+          background: transparent;
+        }
+      }
+
+      /* ===== Corner flag (top-right ribbon) – same as main page ===== */
+      .corner-flag {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 160px;
+        height: 160px;
+        pointer-events: none;
+        z-index: 50;
+      }
+
+      .corner-flag-inner {
+        position: absolute;
+        top: 22px;
+        right: -60px;
+        transform: rotate(45deg);
+        background: #111827;
+        color: #f9fafb;
+        padding: 0.5rem 4rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-align: center;
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
+        border-radius: 999px;
+        pointer-events: auto;
+      }
+
+      .corner-line {
+        display: block;
+        white-space: nowrap;
+      }
+
+      .corner-link {
+        display: block;
+        margin-top: 0.1rem;
+        font-size: 0.7rem;
+        color: #a5b4fc;
+        text-decoration: none;
+      }
+
+      .corner-link:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 480px) {
+        .corner-flag {
+          transform: scale(0.85);
+        }
+      }
+
+      /* ===== Instruction box above controls ===== */
+      .instruction-box {
+        margin: 0.9rem 0 0.4rem;
+        padding: 0.75rem 0.85rem;
+        border-radius: 12px;
+        background: #eef2ff;
+        border: 1px solid #c7d2fe;
+      }
+
+      .instruction-title {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #3730a3;
+        margin-bottom: 0.35rem;
+      }
+
+      .instruction-text {
+        font-size: 0.8rem;
+        color: #374151;
+        margin: 0.3rem 0;
+        line-height: 1.45;
+      }
+
+      /* ===== Page footer ===== */
+
+      .page-footer {
+        margin-top: auto;
+        padding-top: 1.25rem;
+        border-top: 1px solid #e5e7eb;
+        text-align: center;
+      }
+
+      .footer-text {
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin-bottom: 0.4rem;
+      }
+
+      .footer-contact a {
+        color: #4f46e5;
+        text-decoration: none;
+      }
+
+      .footer-contact a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top-right ribbon: identical nibble -->
+    <div class="corner-flag">
+      <div class="corner-flag-inner">
+        <span class="corner-line">No data collected</span>
+        <a
+          href="https://github.com/podiumdesu/wallet-privacy"
+          target="_blank"
+          rel="noopener"
+          class="corner-link"
+        >
+          View source on GitHub
+        </a>
+      </div>
+    </div>
+
+    <div class="page-wrapper">
+      <div class="page">
+        <header class="page-header">
+          <div>
+            <h1>awesome-dApp</h1>
+            <p class="subtitle">
+              This dApp has the same tracker embedded as the
+              <a
+                href="https://wallet-privacy.distriled.dnetcloud.cs.kuleuven.be/"
+                >demo page</a
+              >.
+            </p>
+          </div>
+        </header>
+
+        <!-- 🔹 New instruction for people coming from wallet-privacy -->
+        <div class="instruction-box">
+          <div class="instruction-title">
+            If you arrived here from the demo…
+          </div>
+          <p class="instruction-text">
+            Select one of the wallets highlighted in <b>red</b> on the demo
+            page, then click <b>Connect wallet</b>.
+          </p>
+        </div>
+
+        <div class="layout">
+          <!-- Left: dApp controls -->
+          <section>
+            <div>
+              <div>
+                <div class="row">
+                  <span class="label">Detected wallet:</span>
+                  <select id="providerSelect"></select>
+                  <button id="scanBtn" class="btn-secondary">Rescan</button>
+                </div>
+
+                <div
+                  class="row"
+                  style="flex-direction: column; align-items: flex-start"
+                >
+                  <div class="action-box">
+                    <div class="action-box-label">Main steps</div>
+                    <div class="action-buttons">
+                      <button id="connectBtn" class="btn-primary">
+                        <span class="step-badge">1</span>
+                        <span>Connect wallet</span>
+                      </button>
+                      <button id="checkBtn" class="btn-secondary">
+                        <span class="step-badge">2</span>
+                        <span>Show visible address</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="row">
+                    <span class="label">Status:</span>
+                    <span id="status" class="status">idle</span>
+                  </div>
+
+                  <!-- <div class="row" style="flex-direction: column; align-items: flex-start;">
+                  <span class="label">Address this page can see from this wallet:</span>
+                  <code id="currentAccounts">[]</code>
+                  <span class="pill-secondary">
+                    This is the wallet address (or addresses) that this page can
+                    currently see.
+                  </span>
+                </div> -->
+
+                  <div class="revoke-box">
+                    <div class="revoke-title">
+                      Optional: disconnect this page from your wallet
+                    </div>
+                    <p class="revoke-text">
+                      This button asks your wallet to
+                      <b>disconnect this page</b>. If your wallet supports this
+                      feature, it removes this page’s permission to see your
+                      wallet address. After that, we check again what address
+                      this page can see.<br /><br />
+                      If nothing is visible anymore, we call the wallet
+                      <b>revocation-safe</b> in this demo. If your address is
+                      still visible, we call it <b>revocation-unsafe</b>, and
+                      you need to disconnect it manually inside your wallet app.
+                    </p>
+                    <button id="revokeBtn" class="btn-info">
+                      Disconnect wallet and test
+                    </button>
+                    <div id="revokeResult" class="revocation-badge neutral">
+                      Revocation test not run yet
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Right: tracker log -->
+          <section>
+            <h2>Tracker view on this page</h2>
+            <p class="section-caption">
+              This shows what the embedded tracker script on this page can see.
+            </p>
+            <div class="card">
+              <div class="card-inner">
+                <div class="row">
+                  <span class="label">Local tracker log:</span>
+                </div>
+                <div id="localLog" class="small">
+                  <div class="entry">(no tracker probe yet)</div>
+                </div>
+                <p class="log-caption">
+                  The tracker probes automatically on load and periodically
+                  every few seconds, plus after each wallet action.
+                </p>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+      <!-- Contact footer -->
+      <footer class="page-footer">
+        <p class="footer-text">
+          For questions, requests for a preprint of the paper, or further
+          technical details: contact
+          <a href="mailto:weihong.wang@kuleuven.be">
+            weihong.wang@kuleuven.be
+          </a>
+          ·
+          <a
+            href="https://distrinet.cs.kuleuven.be"
+            target="_blank"
+            rel="noopener"
+          >
+            DistriNet, KU Leuven
+          </a>
+        </p>
+      </footer>
+    </div>
+
+    <!-- Shared tracker logic -->
+    <script src="./tracker-core.js"></script>
+
+    <!-- Page-specific UI logic -->
+    <script>
+      const $ = (id) => document.getElementById(id);
+
+      const setText = (id, v) => {
+        const el = $(id);
+        if (el) el.textContent = v;
+      };
+
+      let providers = []; // { provider, name, info }
+      let selected = null;
+
+      const localLog = $("localLog");
+      const revokeResultEl = $("revokeResult");
+
+      // 🔸 Keep last tracker snapshot to detect changes
+      let lastTrackerSnapshot = null;
+      let hasTrackerRenderedOnce = false;
+
+      function renderTrackerLocal(data) {
+        localLog.innerHTML = "";
+
+        // header row
+        const header = document.createElement("div");
+        header.className = "entry";
+        header.innerHTML = `
+          <span class="tag">${data.context}</span>
+          <code>${data.origin}</code>
+        `;
+        localLog.appendChild(header);
+
+        const newSnapshot = {};
+
+        data.results.forEach((r) => {
+          const div = document.createElement("div");
+          div.className = "entry";
+
+          const key = r.wallet || "unknown-wallet";
+          const snapshotVal = JSON.stringify(
+            r.error ? { error: r.error } : { accounts: r.accounts || [] },
+          );
+          newSnapshot[key] = snapshotVal;
+
+          const previously =
+            lastTrackerSnapshot &&
+            Object.prototype.hasOwnProperty.call(lastTrackerSnapshot, key)
+              ? lastTrackerSnapshot[key]
+              : null;
+
+          const changed =
+            hasTrackerRenderedOnce &&
+            previously !== null &&
+            previously !== snapshotVal;
+
+          if (changed) {
+            div.classList.add("changed");
+          }
+
+          const title = document.createElement("div");
+          title.innerHTML = `<span class="wallet-name">${r.wallet}</span> – ${
+            r.error
+              ? "error"
+              : Array.isArray(r.accounts) && r.accounts.length
+                ? `${r.accounts.length} address(es)`
+                : "no address visible"
+          }`;
+          const accounts = document.createElement("div");
+          accounts.className = "accounts";
+          accounts.textContent = r.error
+            ? r.error
+            : JSON.stringify(r.accounts || []);
+
+          div.appendChild(title);
+          div.appendChild(accounts);
+          localLog.appendChild(div);
+        });
+
+        lastTrackerSnapshot = newSnapshot;
+        hasTrackerRenderedOnce = true;
+      }
+
+      async function runTrackerAndPost(contextLabel) {
+        if (!window.walletTracker) return;
+        const data = await walletTracker.probeAndPost(
+          contextLabel,
+          window.parent,
+          "walletExposureFromIframe",
+        );
+        renderTrackerLocal(data);
+      }
+
+      // -------- DApp UI logic (connect / revoke / check) --------
+
+      async function scanForDapp() {
+        if (!window.walletTracker) {
+          setText("status", "tracker-core.js not loaded");
+          return;
+        }
+
+        setText("status", "scanning for wallets…");
+        providers = await walletTracker.discoverProviders();
+        const sel = $("providerSelect");
+        sel.innerHTML = "";
+
+        if (!providers.length) {
+          sel.appendChild(new Option("No wallet detected", ""));
+          selected = null;
+          setText("status", "no provider");
+          return;
+        }
+
+        providers.forEach((p, idx) =>
+          sel.appendChild(new Option(p.name, String(idx))),
+        );
+        sel.value = "0";
+        selected = providers[0].provider;
+        setText("status", `selected: ${providers[0].name}`);
+      }
+
+      $("scanBtn").addEventListener("click", scanForDapp);
+
+      $("providerSelect").addEventListener("change", (e) => {
+        const idx = Number(e.target.value);
+        if (Number.isInteger(idx) && providers[idx]) {
+          selected = providers[idx].provider;
+          setText("status", `selected: ${providers[idx].name}`);
+        } else {
+          selected = null;
+          setText("status", "no provider selected");
+        }
+      });
+
+      $("connectBtn").addEventListener("click", async () => {
+        if (!selected) {
+          setText("status", "no provider selected");
+          return;
+        }
+        setText("status", "asking your wallet to connect…");
+        try {
+          const accs = await selected.request({
+            method: "eth_requestAccounts",
+            params: [],
+          });
+          setText("currentAccounts", JSON.stringify(accs || []));
+          setText("status", "wallet connected");
+        } catch (e) {
+          console.error("eth_requestAccounts error", e);
+          setText("status", "wallet connection error");
+        }
+        runTrackerAndPost("after-connect");
+      });
+
+      $("revokeBtn").addEventListener("click", async () => {
+        if (!selected) {
+          setText("status", "no provider selected");
+          return;
+        }
+
+        let classificationText = "";
+        let classificationClass = "neutral";
+
+        // 1) Check what address this page can currently see
+        setText("status", "checking what this page can see before the test…");
+        let accsBefore = [];
+        try {
+          accsBefore = await selected.request({
+            method: "eth_accounts",
+            params: [],
+          });
+        } catch (e) {
+          console.warn("eth_accounts before test failed", e);
+          accsBefore = [];
+        }
+
+        // 2) If no account yet, ask wallet to connect
+        if (!Array.isArray(accsBefore) || accsBefore.length === 0) {
+          try {
+            setText(
+              "status",
+              "no visible address yet, asking your wallet to connect for this test…",
+            );
+            const reqAccs = await selected.request({
+              method: "eth_requestAccounts",
+              params: [],
+            });
+            setText("currentAccounts", JSON.stringify(reqAccs || []));
+            accsBefore = reqAccs || [];
+          } catch (e) {
+            console.warn("eth_requestAccounts during test failed", e);
+            setText("status", "could not connect wallet for this test");
+            if (revokeResultEl) {
+              revokeResultEl.textContent =
+                "Could not run revocation-safety test: wallet connection was not granted.";
+              revokeResultEl.className = "revocation-badge unsupported";
+            }
+            return;
+          }
+        } else {
+          // We already had a connected address; sync UI with that
+          setText("currentAccounts", JSON.stringify(accsBefore || []));
+        }
+
+        // 3) Now attempt revoke
+        setText("status", "asking the wallet to revoke this page’s access…");
+        try {
+          await selected.request({
+            method: "wallet_revokePermissions",
+            params: [{ eth_accounts: {} }],
+          });
+        } catch (e) {
+          console.warn("wallet_revokePermissions failed/unsupported", e);
+          //classificationText =
+          //  "Revocation-unsafe: wallet_revokePermissions not supported by this wallet (or the call failed).";
+          //classificationClass = "unsafe";
+          // continue to check what the page can see anyway
+        }
+
+        // 4) Check what the page can see after revoke
+        setText("status", "checking what this page can see after revoke…");
+        try {
+          const accsAfter = await selected.request({
+            method: "eth_accounts",
+            params: [],
+          });
+          setText("currentAccounts", JSON.stringify(accsAfter || []));
+
+          if (!classificationText) {
+            if (Array.isArray(accsAfter) && accsAfter.length === 0) {
+              classificationText =
+                "Revocation-safe: after revoke, this page no longer sees any wallet address.";
+              classificationClass = "safe";
+            } else if (Array.isArray(accsAfter) && accsAfter.length > 0) {
+              classificationText =
+                "Revocation-unsafe: even after revoke, this page still sees at least one wallet address.";
+              classificationClass = "unsafe";
+            } else {
+              classificationText =
+                "Revocation result unclear: the address list this page sees is not in a normal format.";
+              classificationClass = "unsafe";
+            }
+          }
+        } catch (e) {
+          console.error("eth_accounts after revoke failed", e);
+          setText("currentAccounts", JSON.stringify(["error", e.message]));
+          if (!classificationText) {
+            classificationText =
+              "Revocation test failed: could not read what address this page sees after revoke.";
+            classificationClass = "unsafe";
+          }
+        }
+
+        setText("status", "revocation test completed");
+
+        if (revokeResultEl) {
+          revokeResultEl.textContent = classificationText;
+          revokeResultEl.className = "revocation-badge " + classificationClass;
+        }
+
+        runTrackerAndPost("after-revoke");
+      });
+
+      $("checkBtn").addEventListener("click", async () => {
+        if (!selected) {
+          setText("status", "no provider selected");
+          return;
+        }
+        setText("status", "checking what address this page can see…");
+        try {
+          const accs = await selected.request({
+            method: "eth_accounts",
+            params: [],
+          });
+          setText("currentAccounts", JSON.stringify(accs || []));
+          setText("status", "visible address updated. See right.");
+        } catch (e) {
+          console.error("eth_accounts check failed", e);
+          setText("currentAccounts", JSON.stringify(["error", e.message]));
+          setText("status", "error while reading visible address");
+        }
+        runTrackerAndPost("manual-check");
+      });
+
+      // On load: behave like a real tracker – auto-probe without user action.
+      (async () => {
+        await scanForDapp();
+        runTrackerAndPost("on-load");
+
+        if (selected) {
+          try {
+            const accs = await selected.request({
+              method: "eth_accounts",
+              params: [],
+            });
+            setText("currentAccounts", JSON.stringify(accs || []));
+          } catch {
+            // ignore, leave default []
+          }
+        }
+
+        setInterval(() => {
+          runTrackerAndPost("auto");
+        }, 5000);
+      })();
+    </script>
+  </body>
+</html>

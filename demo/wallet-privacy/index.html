@@ -1,0 +1,733 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Cross-Origin Wallet Deanonymization Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      /* General layout + typography */
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        max-width: 900px;
+        margin: 2rem auto;
+        margin-bottom: 0rem;
+        padding: 0 1rem 3rem;
+        background: #f5f5f7;
+        color: #111827;
+      }
+
+      code {
+        background: #f3f4f6;
+        padding: 0.15rem 0.35rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+      }
+
+      button {
+        padding: 0.5rem 1rem;
+        border-radius: 999px;
+        border: 1px solid #e5e7eb;
+        background: #fff;
+        cursor: pointer;
+        font-size: 0.95rem;
+      }
+
+      button:hover {
+        background: #f3f4f6;
+      }
+
+      button:active {
+        transform: translateY(1px);
+      }
+
+      /* ===== Corner flag (top-right ribbon) ===== */
+      .corner-flag {
+        position: fixed;
+        top: 0;
+        right: 0;
+        width: 160px;
+        height: 160px;
+        pointer-events: none;
+        z-index: 50;
+      }
+
+      .corner-flag-inner {
+        position: absolute;
+        top: 22px;
+        right: -60px;
+        transform: rotate(45deg);
+        background: #111827;
+        color: #f9fafb;
+        padding: 0.5rem 4rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-align: center;
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
+        border-radius: 999px;
+        pointer-events: auto;
+      }
+
+      .corner-line {
+        display: block;
+        white-space: nowrap;
+      }
+
+      .corner-link {
+        display: block;
+        margin-top: 0.1rem;
+        font-size: 0.7rem;
+        color: #a5b4fc;
+        text-decoration: none;
+      }
+
+      .corner-link:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 480px) {
+        .corner-flag {
+          transform: scale(0.85);
+        }
+      }
+
+      /* ===== Page header ===== */
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1.75rem;
+      }
+
+      .header-left h1 {
+        font-size: 1.5rem;
+        font-weight: 800;
+        margin: 0;
+        color: #111827;
+      }
+
+      .subtitle {
+        margin-top: 0.35rem;
+        font-size: 0.9rem;
+        color: #6b7280;
+        max-width: 42rem;
+        line-height: 1.4;
+      }
+
+      .affiliation {
+        font-size: 0.75rem;
+        color: #9ca3af;
+      }
+
+      .affiliation a {
+        color: #6b7280;
+        text-decoration: none;
+      }
+
+      .affiliation a:hover {
+        text-decoration: underline;
+      }
+
+      @media (max-width: 700px) {
+        .page-header {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+      }
+
+      /* Big step cards */
+      .steps {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+      }
+
+      .step-card {
+        background: #ffffff;
+        border-radius: 18px;
+        border: 1px solid #e5e7eb;
+        padding: 1.25rem 1.5rem;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+      }
+
+      .step-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+      }
+
+      .step-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #4f46e5;
+      }
+
+      .step-title {
+        font-size: 1.1rem;
+        font-weight: 800;
+        margin-top: 0.15rem;
+      }
+
+      .step-title.boom {
+        color: #b91c1c;
+      }
+
+      .step-text {
+        font-size: 0.9rem;
+        color: #4b5563;
+        margin-bottom: 0.75rem;
+      }
+
+      iframe {
+        width: 100%;
+        height: 130px;
+        border: 1px dashed #e5e7eb;
+        border-radius: 12px;
+        background: #f9fafb;
+        margin-top: 0.75rem;
+      }
+
+      /* Logs layout (single column) */
+      .log-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-top: 0.75rem;
+      }
+
+      .log-column {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+
+      .log-column-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        color: #4b5563;
+      }
+
+      .log {
+        padding: 0.75rem 1rem;
+        border-radius: 12px;
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        font-size: 0.85rem;
+        max-height: 260px;
+        overflow-y: auto;
+      }
+
+      .entry {
+        padding: 0.4rem 0;
+        border-bottom: 1px solid #e5e7eb;
+      }
+
+      .entry:last-child {
+        border-bottom: none;
+      }
+
+      .address-line {
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+        font-size: 0.8rem;
+        word-break: break-all;
+        padding: 0.15rem 0;
+      }
+
+      .placeholder-title {
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+      }
+
+      .placeholder-text {
+        font-size: 0.8rem;
+        color: #6b7280;
+      }
+
+      .footer-note {
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin-top: 0.5rem;
+      }
+
+      /* Box for leak summary under Step 2 */
+      .wallet-leak-box {
+        margin-top: 0.4rem;
+        padding: 0.6rem 0.75rem;
+        border-radius: 12px;
+        border: 1px solid #fecaca;
+        background: #fee2e2;
+      }
+
+      .wallet-leak-item {
+        font-size: 0.85rem;
+        color: #7f1d1d;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+        font-family:
+          ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+      }
+
+      .wallet-leak-item:last-child {
+        margin-bottom: 0;
+      }
+
+      /* Pills that show which wallets are injected where */
+      .wallet-pill {
+        display: inline-block;
+        padding: 0.1rem 0.45rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        margin-right: 0.25rem;
+        margin-top: 0.15rem;
+        border: 1px solid transparent;
+      }
+
+      .wallet-pills-box {
+        margin-top: 0.35rem;
+        padding: 0.45rem 0.6rem;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        background: #f9fafb;
+        display: flex;
+        flex-wrap: wrap;
+      }
+
+      .wallet-pill-red {
+        background: #fee2e2;
+        color: #b91c1c;
+        border-color: #fecaca;
+      }
+
+      .wallet-pill-green {
+        background: #dcfce7;
+        color: #166534;
+        border-color: #bbf7d0;
+      }
+
+      .leak-note {
+        font-size: 0.85rem;
+        color: #b91c1c;
+        font-weight: 600;
+        margin-top: 0.75rem;
+      }
+
+      @media (max-width: 700px) {
+        .log-grid {
+          flex-direction: column;
+        }
+      }
+
+      /* ===== Page footer ===== */
+
+      .page-footer {
+        margin-top: 1rem;
+        padding-top: 1.25rem;
+        border-top: 1px solid #e5e7eb;
+        text-align: center;
+      }
+
+      .footer-text {
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin-bottom: 0.4rem;
+      }
+
+      .footer-contact a {
+        color: #4f46e5;
+        text-decoration: none;
+      }
+
+      .footer-contact a:hover {
+        text-decoration: underline;
+      }
+
+      /* ===== Technical explanation card ===== */
+
+      .explain-card {
+        margin-top: 1.25rem;
+      }
+
+      .explain-title {
+        font-size: 1rem;
+        font-weight: 700;
+        margin: 0 0 0.4rem;
+      }
+
+      .explain-subtitle {
+        font-size: 0.85rem;
+        color: #6b7280;
+        margin-bottom: 0.5rem;
+      }
+
+      .explain-list {
+        font-size: 0.85rem;
+        color: #4b5563;
+        padding-left: 1.1rem;
+        margin-top: 0.3rem;
+      }
+
+      .explain-list li {
+        margin-bottom: 0.25rem;
+      }
+
+      .explain-layout {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1.25rem;
+        align-items: flex-start;
+      }
+
+      .explain-col-text {
+        flex: 1 1 0;
+        min-width: 0;
+      }
+
+      .explain-col-figure {
+        flex: 0 0 360px;
+        max-width: 520px;
+        align-self: center;
+      }
+
+      .explain-figure {
+        width: 100%;
+        border-radius: 0;
+        background: #ffffff;
+        display: block;
+      }
+
+      .figure-caption {
+        font-size: 0.75rem;
+        color: #6b7280;
+        margin-top: 0.25rem;
+      }
+
+      .iframe-preview-title {
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-top: 0.9rem;
+        margin-bottom: 0.25rem;
+        color: #374151;
+      }
+
+      .iframe-preview-note {
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin-bottom: 0.35rem;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top-right ribbon -->
+    <div class="corner-flag">
+      <div class="corner-flag-inner">
+        <span class="corner-line">No data collected</span>
+        <a
+          href="https://github.com/podiumdesu/wallet-privacy"
+          target="_blank"
+          rel="noopener"
+          class="corner-link"
+        >
+          View source on GitHub
+        </a>
+      </div>
+    </div>
+
+    <!-- Page header -->
+    <header class="page-header">
+      <div class="header-left">
+        <h1>Cross-Origin Wallet Address Exposure Demo</h1>
+        <p class="subtitle">
+          Silent Web2 ↔ Web3 identity linkage via iframe-injected wallet
+          providers<br />
+          <span class="affiliation">
+            <a href="https://petsymposium.org/" target="_blank" rel="noopener">
+              Paper is accepted for publication in the Proceedings on Privacy
+              Enhancing Technologies (PoPETs) 2026
+            </a>
+          </span>
+        </p>
+      </div>
+    </header>
+
+    <div class="steps">
+      <!-- STEP 0 -->
+      <section class="step-card">
+        <div class="step-header">
+          <div>
+            <div class="step-label">Step 0</div>
+            <div class="step-title">
+              See which wallets installed in your browser are vulnerable
+            </div>
+          </div>
+        </div>
+        <p class="step-text">
+          This step shows which wallet providers are active in your browser on
+          <b>this page</b>.<br />
+          <b>Red ones are vulnerable in this deanonymization test.</b>
+          <b>Green ones are not exposed in this test.</b><br />
+          For Step 1, if you see any <b>red</b> wallets listed, pick one of them
+          in your browser wallet and connect with it.
+        </p>
+        <p id="walletProvidersLine" class="footer-note">
+          Wallet providers on this page: (waiting…)
+        </p>
+
+        <!-- No-wallet notice -->
+        <div
+          id="noWalletNotice"
+          style="
+            display: none;
+            margin-top: 0.6rem;
+            padding: 0.6rem 0.75rem;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            background: #f9fafb;
+          "
+        >
+          <div style="font-size: 0.85rem; font-weight: 600; color: #374151">
+            No Web3 wallet detected
+          </div>
+          <div style="font-size: 0.8rem; color: #6b7280; margin-top: 0.25rem">
+            This browser does not have any Ethereum-compatible wallet installed,
+            so this test cannot run.
+          </div>
+          <div style="font-size: 0.8rem; margin-top: 0.35rem">
+            You can install
+            <a
+              href="https://chromewebstore.google.com/detail/metamask/nkbihfbeogaeaoehlefnkodbefgpgknn"
+              target="_blank"
+              rel="noopener"
+              style="color: #4f46e5; text-decoration: none"
+            >
+              MetaMask for Chrome
+            </a>
+            and then reload this page.
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 1 -->
+      <section class="step-card">
+        <div class="step-header">
+          <div>
+            <div class="step-label">Step 1</div>
+            <div class="step-title">
+              Open a dApp and connect with one vulnerable wallet
+            </div>
+          </div>
+          <button id="openDapp">Open demo dApp</button>
+        </div>
+        <p class="step-text">In that dApp tab:</p>
+        <ul
+          class="step-text"
+          style="margin-top: -0.35rem; padding-left: 1.2rem"
+        >
+          <li>Select the same <b>red</b> wallet you saw in Step&nbsp;0.</li>
+          <li>
+            Click on “connect” and approve the connection in the wallet prompt.
+          </li>
+          <li>
+            Then close the demo dApp tab and return to this page.
+            <b>Refresh this page once to see the result.</b>
+          </li>
+        </ul>
+      </section>
+
+      <!-- STEP 2 -->
+      <section class="step-card">
+        <div class="step-header">
+          <div>
+            <div class="step-label">Step 2</div>
+            <div class="step-title boom">Your wallet addresses are…</div>
+          </div>
+          <!-- <button id="rerunTopProbe">Run again</button> -->
+        </div>
+        <!-- <p class="step-text">
+          After completing Step&nbsp;1 and returning here, the box below shows
+          which wallet addresses are visible to this page
+          <b>without any interaction on this page</b>.
+        </p> -->
+        <p class="step-text" style="margin-top: 0.35rem">
+          If one or more addresses appear below for a <b>red</b> wallet, this
+          test page has <b>learned your wallet address indirectly</b>, even
+          though you never connected a wallet here.
+        </p>
+
+        <div class="log-grid">
+          <div class="log-column">
+            <div class="log-column-title">
+              Wallet addresses visible to this page
+            </div>
+            <div class="log" id="logTop">
+              <div class="entry placeholder">
+                <div class="placeholder-title">Waiting…</div>
+                <div class="placeholder-text">
+                  This box will show any wallet addresses that are currently
+                  visible to this page.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <p id="walletLeakLine" class="leak-note">
+          In this test, waiting for any wallets to expose addresses…
+        </p>
+      </section>
+
+      <!-- Contact footer -->
+      <footer class="page-footer">
+        <p class="footer-text">
+          For questions, requests for a preprint of the paper, or further
+          technical details: contact
+          <a href="mailto:weihong.wang@kuleuven.be">
+            weihong.wang@kuleuven.be
+          </a>
+          ·
+          <a
+            href="https://distrinet.cs.kuleuven.be"
+            target="_blank"
+            rel="noopener"
+          >
+            DistriNet, KU Leuven
+          </a>
+        </p>
+      </footer>
+
+      <!-- Technical explanation with diagram + iframe -->
+      <section class="step-card explain-card">
+        <div class="step-header">
+          <div>
+            <div class="step-label">Technical details (optional)</div>
+            <h2 class="explain-title">How this test works behind the scenes</h2>
+            <p class="explain-subtitle">
+              This deanonymization attack exploits how wallet permissions are
+              scoped to website origins, combined with the widespread use of
+              shared third-party trackers.
+            </p>
+          </div>
+        </div>
+
+        <div class="explain-layout">
+          <div class="explain-col-text">
+            <ol class="explain-list">
+              <li>
+                When a user connects their wallet to a dApp (for example,
+                <code>dAppX.com</code>), the wallet grants that origin
+                permission to access the user’s address. The permission is
+                scoped to the <em>origin</em>, not to a specific page or
+                context.
+              </li>
+
+              <li>
+                A <b>third-party tracker</b> is embedded on many websites,
+                including Web3 dApps (such as <code>dAppX.com</code>) and
+                ordinary Web2 sites (such as <code>websiteA.com</code>). dApps
+                typically embed such trackers for benign purposes such as
+                analytics or usage measurement.
+              </li>
+
+              <li>
+                When the user later visits <code>websiteA.com</code>, the same
+                tracker may also be present there. On this site,
+                <b>the tracker cannot directly access any wallet address</b>,
+                because the user never connected their wallet to
+                <code>websiteA.com</code>.
+              </li>
+
+              <li>
+                However, the tracker can
+                <b>invisibly load any dApp that embeds it</b> inside a hidden
+                <code>&lt;iframe&gt;</code> (Figure&nbsp;1, Step&nbsp;1 inject).
+                The dApp does not know that it is being loaded in this way and
+                does not cooperate with the attack.
+              </li>
+
+              <li>
+                Inside the iframe, the page origin is <code>dAppX.com</code>. If
+                a wallet
+                <b>injects its provider into cross-origin iframe contexts</b
+                >(Figure&nbsp;1, Step&nbsp;2 expose), the provider becomes
+                available inside this iframe. As a result, the tracker script
+                running there (under the <code>dAppX.com</code> origin) can call
+                <code>eth_accounts</code> and obtain the wallet address that was
+                previously authorized for <code>dAppX.com</code>.
+                <br />
+                <em>
+                  Wallets that do not inject providers into cross-origin iframes
+                  do not expose addresses at this step.
+                </em>
+              </li>
+
+              <li>
+                The tracker then sends this address back to the top-level page
+                (for the tracker on <code>websiteA.com</code>), where this
+                address can be linked with other identifiers visible on
+                <code>websiteA.com</code> (such as Google logins).
+                (Figure&nbsp;1, Step&nbsp;3 link)
+              </li>
+            </ol>
+
+            <p class="step-text">
+              The tracker can inject many different dApps that embeds it
+              (<code>dAppX.com</code>, <code>dAppY.com</code>,
+              <code>dAppZ.com</code>, …) and succeeds whenever the user has
+              previously connected their wallet to any one of them.
+            </p>
+
+            <p class="step-text">
+              This enables silent Web2 ↔ Web3 identity linkage
+              <b
+                >without user interaction, without cookies, and without
+                cooperation or awareness from the dApps involved.</b
+              >
+            </p>
+          </div>
+
+          <div class="explain-col-figure">
+            <img
+              src="./threat4.jpg"
+              alt="Shared tracker embedding a dApp origin in a hidden iframe to probe the user’s wallet address"
+              class="explain-figure"
+            />
+            <div class="figure-caption">
+              Figure 1. A shared third-party tracker present on both
+              <code>websiteA.com</code> and <code>dAppX.com</code> embeds the
+              dApp origin in a hidden iframe and probes the user’s wallet
+              address.
+            </div>
+          </div>
+        </div>
+
+        <h3 class="iframe-preview-title">
+          Embedded dApp iframe used in this test
+        </h3>
+        <p class="iframe-preview-note">
+          Below is the actual iframe that loads the demo dApp (<code>
+            <a href="https://dappx.weihongw.com" target="_blank" rel="noopener"
+              >dappx.weihongw.com</a
+            >
+          </code>
+          , referred to as <code>dAppX</code> above) inside this page. In a real
+          attack, this iframe would typically be hidden from the user.
+        </p>
+
+        <iframe id="dappFrame" src="https://dappx.weihongw.com"></iframe>
+      </section>
+    </div>
+
+    <script src="./tracker.js"></script>
+  </body>
+</html>
