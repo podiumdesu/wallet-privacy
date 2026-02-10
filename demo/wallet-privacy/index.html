@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8" />
-    <title>Cross-Origin Wallet Deanonymization Test</title>
+    <title>Cross-Origin Wallet Address Exposure Test</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <style>
       /* General layout + typography */
@@ -434,7 +434,7 @@
       <div class="corner-flag-inner">
         <span class="corner-line">No data collected</span>
         <a
-          href="https://github.com/podiumdesu/wallet-privacy"
+          href="https://github.com/podiumdesu/wallet-privacy/tree/main/demo/wallet-privacy"
           target="_blank"
           rel="noopener"
           class="corner-link"
@@ -447,7 +447,7 @@
     <!-- Page header -->
     <header class="page-header">
       <div class="header-left">
-        <h1>Cross-Origin Wallet Address Exposure Demo</h1>
+        <h1>Cross-Origin Browser-Extension Wallet Address Exposure Demo</h1>
         <p class="subtitle">
           Silent Web2 ↔ Web3 identity linkage via iframe-injected wallet
           providers<br />
@@ -729,5 +729,13 @@
     </div>
 
     <script src="./tracker.js"></script>
+
+    <script>
+      document
+        .getElementById("openDapp")
+        .addEventListener("click", function () {
+          window.open("https://dappx.weihongw.com", "_blank", "noopener");
+        });
+    </script>
   </body>
 </html>

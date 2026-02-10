@@ -108,6 +108,14 @@ function discoverProviders() {
   });
 }
 
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error("timeout")), ms),
+    ),
+  ]);
+}
 async function probeWallets(contextLabel) {
   var providers = await discoverProviders();
   var results = [];
@@ -129,10 +137,10 @@ async function probeWallets(contextLabel) {
   for (var i = 0; i < providers.length; i++) {
     var w = providers[i];
     try {
-      var accs = await w.provider.request({
-        method: "eth_accounts",
-        params: [],
-      });
+      var accs = await withTimeout(
+        w.provider.request({ method: "eth_accounts", params: [] }),
+        500,
+      );
       results.push({
         wallet: w.name,
         accounts: accs || [],
@@ -221,6 +229,7 @@ function updateSummary() {
   }
 
   var entries = Array.from(providersMap.entries());
+  // 🔤 Sort by name (A → Z) explicitly
 
   if (!entries.length) {
     walletProvidersLineEl.textContent =
@@ -229,7 +238,10 @@ function updateSummary() {
       "In this test, no wallet addresses were learned from any wallets.";
     return;
   }
-
+  // console.log(entries[0])
+  entries.sort(function (a, b) {
+    return a[0].localeCompare(b[0]);
+  });
   var pillHtml = entries
     .map(function ([name, info]) {
       var cls = info.inIframe
@@ -314,6 +326,7 @@ window.addEventListener("message", function (event) {
   var payload = msg.payload || {};
   var results = payload.results || [];
 
+  // console.log("Results from message", results)
   lastIframeResults = results;
   updateVisibleAddresses();
   updateSummary();
@@ -324,14 +337,10 @@ window.addEventListener("message", function (event) {
   await runTopProbe("initial");
 })();
 
-document.getElementById("rerunTopProbe").addEventListener("click", function () {
-  runTopProbe("manual");
-});
+// document.getElementById("rerunTopProbe").addEventListener("click", function () {
+//   runTopProbe("manual");
+// });
 
 setInterval(function () {
   runTopProbe("auto");
 }, 5000);
-
-document.getElementById("openDapp").addEventListener("click", function () {
-  window.open("https://dappx.weihongw.com", "_blank", "noopener");
-});

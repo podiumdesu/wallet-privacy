@@ -502,7 +502,7 @@
       <div class="corner-flag-inner">
         <span class="corner-line">No data collected</span>
         <a
-          href="https://github.com/podiumdesu/wallet-privacy"
+          href="https://github.com/podiumdesu/wallet-privacy/tree/main/demo/dappx"
           target="_blank"
           rel="noopener"
           class="corner-link"
@@ -521,6 +521,7 @@
               This dApp has the same tracker embedded as the
               <a
                 href="https://wallet-privacy.distriled.dnetcloud.cs.kuleuven.be/"
+                target="_blank"
                 >demo page</a
               >.
             </p>
@@ -533,8 +534,8 @@
             If you arrived here from the demo…
           </div>
           <p class="instruction-text">
-            Select one of the wallets highlighted in <b>red</b> on the demo
-            page, then click <b>Connect wallet</b>.
+            Scan the available wallets. Select one of the wallets highlighted in
+            <b>red</b> on the demo page, then click <b>Connect wallet</b>.
           </p>
         </div>
 
@@ -546,7 +547,7 @@
                 <div class="row">
                   <span class="label">Detected wallet:</span>
                   <select id="providerSelect"></select>
-                  <button id="scanBtn" class="btn-secondary">Rescan</button>
+                  <button id="scanBtn" class="btn-secondary">Scan</button>
                 </div>
 
                 <div
@@ -735,16 +736,6 @@
         hasTrackerRenderedOnce = true;
       }
 
-      async function runTrackerAndPost(contextLabel) {
-        if (!window.walletTracker) return;
-        const data = await walletTracker.probeAndPost(
-          contextLabel,
-          window.parent,
-          "walletExposureFromIframe",
-        );
-        renderTrackerLocal(data);
-      }
-
       // -------- DApp UI logic (connect / revoke / check) --------
 
       async function scanForDapp() {
@@ -803,7 +794,6 @@
           console.error("eth_requestAccounts error", e);
           setText("status", "wallet connection error");
         }
-        runTrackerAndPost("after-connect");
       });
 
       $("revokeBtn").addEventListener("click", async () => {
@@ -911,8 +901,6 @@
           revokeResultEl.textContent = classificationText;
           revokeResultEl.className = "revocation-badge " + classificationClass;
         }
-
-        runTrackerAndPost("after-revoke");
       });
 
       $("checkBtn").addEventListener("click", async () => {
@@ -933,30 +921,7 @@
           setText("currentAccounts", JSON.stringify(["error", e.message]));
           setText("status", "error while reading visible address");
         }
-        runTrackerAndPost("manual-check");
       });
-
-      // On load: behave like a real tracker – auto-probe without user action.
-      (async () => {
-        await scanForDapp();
-        runTrackerAndPost("on-load");
-
-        if (selected) {
-          try {
-            const accs = await selected.request({
-              method: "eth_accounts",
-              params: [],
-            });
-            setText("currentAccounts", JSON.stringify(accs || []));
-          } catch {
-            // ignore, leave default []
-          }
-        }
-
-        setInterval(() => {
-          runTrackerAndPost("auto");
-        }, 5000);
-      })();
     </script>
   </body>
 </html>
